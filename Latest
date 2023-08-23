@@ -1,0 +1,308 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+#define MAX_THREADS 6
+#define BUF_SIZE 1024
+
+void* encryptFile(void* arg) {
+    // ... (same as before)
+
+    // Use fork and execve to run the encryption executable
+    pid_t pid = fork();
+    if (pid == 0) { // Child process
+        const char *aesEncryptPath = "/full/path/to/aes_encrypt"; // Provide the full path here
+        char *argv[] = {aesEncryptPath, inputFile, outputFile, NULL};
+        execve(argv[0], argv, NULL);
+        exit(1); // In case execve fails
+    } else if (pid > 0) { // Parent process
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+            printf("File %s encrypted successfully!\n", filename);
+
+            // Remove the original file
+            if (remove(inputFile) != 0) {
+                perror("Error removing original file");
+            }
+        } else {
+            printf("Encryption failed for file %s\n", filename);
+        }
+    } else { // Fork error
+        perror("Fork error");
+    }
+
+    // ... (same as before)
+
+    return NULL;
+}
+
+// Rest of the code remains the same
+
+~~
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+#define MAX_THREADS 6
+#define BUF_SIZE 1024
+
+void* encryptFile(void* arg) {
+    const char *inputFolder = "input_folder/";
+    const char *outputFolder = "output_folder/";
+
+    const char *filename = (const char *)arg;
+    char inputFile[256];
+    char outputFile[256];
+    snprintf(inputFile, sizeof(inputFile), "%s%s", inputFolder, filename);
+    snprintf(outputFile, sizeof(outputFile), "%s%s.enc", outputFolder, filename);
+
+    // ... (rest of your code)
+
+    // Use fork and execve to run the encryption executable
+    pid_t pid = fork();
+    if (pid == 0) { // Child process
+        const char *aesEncryptPath = "/full/path/to/aes_encrypt"; // Provide the full path here
+        char *argv[] = {aesEncryptPath, inputFile, outputFile, NULL};
+        execve(argv[0], argv, NULL);
+        exit(1); // In case execve fails
+    } else if (pid > 0) { // Parent process
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+            printf("File %s encrypted successfully!\n", filename);
+
+            // Remove the original file
+            if (remove(inputFile) != 0) {
+                perror("Error removing original file");
+            }
+        } else {
+            printf("Encryption failed for file %s\n", filename);
+        }
+    } else { // Fork error
+        perror("Fork error");
+    }
+
+    // ... (rest of your code)
+
+    return NULL;
+}
+
+int main() {
+    const char *inputFolder = "input_folder/";
+
+    // Check if input folder exists and is accessible
+    if (access(inputFolder, F_OK) == -1) {
+        perror("Input folder does not exist");
+        return 1;
+    }
+
+    // Initialize OpenSSL (if needed)
+    // OpenSSL_add_all_algorithms();
+
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir(inputFolder)) != NULL) {
+        pthread_t threads[MAX_THREADS];
+        int threadIndex = 0;
+
+        while ((ent = readdir(dir)) != NULL) {
+            if (ent->d_type == DT_REG) {  // Regular file
+                pthread_create(&threads[threadIndex], NULL, encryptFile, ent->d_name);
+                threadIndex++;
+
+                if (threadIndex >= MAX_THREADS) {
+                    for (int i = 0; i < MAX_THREADS; i++) {
+                        pthread_join(threads[i], NULL);
+                    }
+                    threadIndex = 0;
+                }
+            }
+        }
+
+        // Wait for remaining threads to finish
+        for (int i = 0; i < threadIndex; i++) {
+            pthread_join(threads[i], NULL);
+        }
+
+        closedir(dir);
+    } else {
+        perror("Error opening directory");
+        return 1;
+    }
+
+    // Perform any necessary cleanup or finalization
+    // Cleanup OpenSSL resources (if needed)
+    // free dynamically allocated memory
+
+    printf("All files encrypted successfully!\n");
+
+    return 0;
+}
+(Try this for exe path)
+
+¥¥¥¥¥¥¥¥$¥¥
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+#define MAX_THREADS 6
+#define BUF_SIZE 1024
+
+void* encryptFile(void* arg) {
+    const char *inputFolder = "input_folder/";
+    const char *outputFolder = "output_folder/";
+
+    const char *filename = (const char *)arg;
+    char inputFile[256];
+    char outputFile[256];
+    snprintf(inputFile, sizeof(inputFile), "%s%s", inputFolder, filename);
+    snprintf(outputFile, sizeof(outputFile), "%s%s.enc", outputFolder, filename);
+
+    // Read the encryption key from a file
+    FILE *keyFile = fopen("encryption_key.txt", "r");
+    if (!keyFile) {
+        perror("Error opening key file");
+        return NULL;
+    }
+    
+    char key[256];
+    if (fgets(key, sizeof(key), keyFile) == NULL) {
+        fclose(keyFile);
+        perror("Error reading key from file");
+        return NULL;
+    }
+    fclose(keyFile);
+
+    // ... (rest of your code)
+
+    // Use fork and execve to run the encryption executable
+    pid_t pid = fork();
+    if (pid == 0) { // Child process
+        const char *aesEncryptPath = "/full/path/to/aes_encrypt"; // Provide the full path here
+        char *argv[] = {aesEncryptPath, inputFile, outputFile, key, NULL};
+        execve(argv[0], argv, NULL);
+        exit(1); // In case execve fails
+    } else if (pid > 0) { // Parent process
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+            printf("File %s encrypted successfully!\n", filename);
+
+            // Remove the original file
+            if (remove(inputFile) != 0) {
+                perror("Error removing original file");
+            }
+        } else {
+            printf("Encryption failed for file %s\n", filename);
+        }
+    } else { // Fork error
+        perror("Fork error");
+    }
+
+    // ... (rest of your code)
+
+    return NULL;
+}
+
+int main() {
+    // ... (same as before)
+}
+
+(Key from path)
+
+¥¥¥¥¥¥$
+A more efficient way to read the encryption key from a file would be to read the key once at the beginning of your program and store it in memory, rather than reading it separately for each file encryption operation. This approach can save you file I/O operations and improve efficiency. Here's how you can do it:
+
+1. Read the encryption key from the file at the beginning of your program.
+2. Store the key in memory and use it when needed for encryption operations.
+
+Here's the modified code with this approach:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+#define MAX_THREADS 6
+#define BUF_SIZE 1024
+
+char g_key[256]; // Global variable to store the encryption key
+
+void* encryptFile(void* arg) {
+    const char *inputFolder = "input_folder/";
+    const char *outputFolder = "output_folder/";
+
+    const char *filename = (const char *)arg;
+    char inputFile[256];
+    char outputFile[256];
+    snprintf(inputFile, sizeof(inputFile), "%s%s", inputFolder, filename);
+    snprintf(outputFile, sizeof(outputFile), "%s%s.enc", outputFolder, filename);
+
+    // ... (rest of your code)
+
+    // Use fork and execve to run the encryption executable
+    pid_t pid = fork();
+    if (pid == 0) { // Child process
+        const char *aesEncryptPath = "/full/path/to/aes_encrypt"; // Provide the full path here
+        char *argv[] = {aesEncryptPath, inputFile, outputFile, g_key, NULL};
+        execve(argv[0], argv, NULL);
+        exit(1); // In case execve fails
+    } else if (pid > 0) { // Parent process
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+            printf("File %s encrypted successfully!\n", filename);
+
+            // Remove the original file
+            if (remove(inputFile) != 0) {
+                perror("Error removing original file");
+            }
+        } else {
+            printf("Encryption failed for file %s\n", filename);
+        }
+    } else { // Fork error
+        perror("Fork error");
+    }
+
+    // ... (rest of your code)
+
+    return NULL;
+}
+
+int main() {
+    // Read the encryption key from a file
+    FILE *keyFile = fopen("encryption_key.txt", "r");
+    if (!keyFile) {
+        perror("Error opening key file");
+        return 1;
+    }
+    
+    if (fgets(g_key, sizeof(g_key), keyFile) == NULL) {
+        fclose(keyFile);
+        perror("Error reading key from file");
+        return 1;
+    }
+    fclose(keyFile);
+
+    // ... (rest of your code)
+}
+```
+
+In this code, the encryption key is read from the file at the beginning of the program and stored in the global variable `g_key`. This key is then used in the `encryptFile` function for each encryption operation. This approach reduces the overhead of reading the key from the file multiple times and can improve efficiency, especially when dealing with a large number of files.
